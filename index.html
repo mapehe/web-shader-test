@@ -34,7 +34,6 @@
 
       vec4 shading(in float amp, in vec2 uv){
         float t = amp - .5;
-        vec2 a = gl_FragCoord.xy * uv;
         vec4 col = vec4(.2, .74, 1., 1.);
         return t * col;
       }
