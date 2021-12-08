@@ -8,14 +8,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <script src="shader-web-background.min.js"></script>
     <script type="x-shader/x-fragment" id="image">
-            precision highp float;
-
-            uniform float iTime;
-            uniform float iScrollTop;
-            uniform vec2 iResolution;
-
-          #define breakpoint 2.4
-          #define breakpointTwo 4.5
+      precision highp float;
+      
+      uniform float iTime;
+      uniform float iScrollTop;
+      uniform vec2 iResolution;
+      
+      #define breakpoint 2.4
+      #define breakpointTwo 4.5
 
       float field(in vec2 uv, in float speed, in float size){
         uv.y -= .01*speed*iScrollTop;
