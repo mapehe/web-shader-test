@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Hello.</title>
+    <link rel="stylesheet" href="./style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <script src="shader-web-background.min.js"></script>
+    <script type="x-shader/x-fragment" id="image">
+            precision highp float;
+
+            uniform float iTime;
+            uniform float iScrollTop;
+            uniform vec2 iResolution;
+
+          #define breakpoint 2.4
+          #define breakpointTwo 4.5
+
+      float field(in vec2 uv, in float speed, in float size){
+        uv.y -= .01*speed*iScrollTop;
+        vec2 gv = fract(uv/size)-.5;
+
+        vec2 id = floor(uv/size);
+        float s = 1.;
+
+        float d = length(gv);
+        float a =  1.5*min(.25 * iScrollTop, 0.4);
+        float b = min(max(iScrollTop-breakpoint, 0.), 1.2);
+        float c = sqrt(min(max(iScrollTop-breakpointTwo, 0.), 4.));
+
+        return (a + b - c) * max(s * .05 / d, 0.15);
+      }
+
+      vec4 shading(in float amp, in vec2 uv){
+        float t = amp - .5;
+        vec2 a = gl_FragCoord.xy * uv;
+        vec4 col = vec4(.2, .74, 1., 1.);
+        return t * col;
+      }
+
+      void main(){
+        vec2 uv = (gl_FragCoord.xy - iResolution.xy )/ iResolution.y;
+        float t = .1*iTime + .5*iScrollTop;
+        float s = max(iScrollTop-breakpoint, 0.);
+        float c = min(pow(s, 3.), 1.2);
+        for (float i = 2.0; i < 5.0; i++)
+        {
+            uv.x += c*2.*0.4 / i * cos(i * 2.0 * uv.y + t) * cos(i * 1.5 * uv.y + t);
+            uv.y += c*2.*0.4 / i * cos(i * 2.0 * uv.x + t);
+        }
+        vec4 col = vec4(0);
+        uv = 5. * uv;
+        c = c - min(max(iScrollTop-breakpointTwo, 0.), 1.2);
+
+        float field1 = field(uv, .25, .5);
+        float field2 = field(uv, 30., 1.);
+        float field3 = field(uv, 30., 2.);
+        float amp = field1 + field2 + field3;
+        col.r = shading(amp, uv).r;
+
+        vec2 dx = c*vec2(.05);
+        field1 = field(uv-dx, .25, .5);
+        field2 = field(uv-dx, 30., 1.);
+        field3 = field(uv-dx, 30., 2.);
+        amp = field1 + field2 + field3;
+        col.g = shading(amp, uv).g;
+
+        dx = c*vec2(.025);
+        field1 = field(uv-dx, .25, .5);
+        field2 = field(uv-dx, 30., 1.);
+        field3 = field(uv-dx, 30., 2.);
+        amp = field1 + field2 + field3;
+        col.b = shading(amp, uv).b;
+
+        gl_FragColor = col;
+      }
+    </script>
+    <script>
+      shaderWebBackground.shade({
+        shaders: {
+          image: {
+            uniforms: {
+              iTime: (gl, loc) => gl.uniform1f(loc, performance.now() / 1000),
+              iScrollTop: (gl, loc) =>
+                gl.uniform1f(loc, window.scrollY / window.innerHeight),
+              iResolution: (gl, loc) => {
+                const rect = document
+                  .getElementById("demo")
+                  .getBoundingClientRect();
+                return gl.uniform2f(
+                  loc,
+                  window.screen.width,
+                  window.screen.height
+                );
+              },
+            },
+          },
+        },
+      });
+    </script>
+    <style>
+      .shader-web-background-fallback {
+        background: black;
+        background-position: center;
+        background-size: cover;
+        background-attachment: fixed;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="demo">
+    </div>
+  </body>
+</html>
