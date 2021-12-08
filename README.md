@@ -1,3 +1,6 @@
 # web-shader-test
 
-A shader I made for an [ad](https://three-consulting.github.io/threepoint-ad/).
+See this shader in [action](https://mapehe.github.io/web-shader-test/index.html).
+
+I made this for an [ad](https://three-consulting.github.io/threepoint-ad/).
+
