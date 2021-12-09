@@ -38,7 +38,7 @@
       }
 
       void main(){
-        vec2 uv = (gl_FragCoord.xy - iResolution.xy )/ iResolution.y;
+        vec2 uv = gl_FragCoord.xy / 750.;
         float t = .1*iTime + .5*iScrollTop;
         float s = max(iScrollTop-breakpoint, 0.);
         float c = min(pow(s, 3.), 1.2);
