@@ -72,6 +72,8 @@
         amp = field1 + field2 + field3;
         col.b = shading(amp, uv).b;
 
+        col.b += .5*(col.r + col.g);
+
         gl_FragColor = col;
       }
     </script>
