@@ -3,15 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <title>Hello.</title>
+    <link rel="stylesheet" href="./style.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <script src="shader-web-background.min.js"></script>
-    <script type="x-shader/x-fragment" id="image">
+    <script type="x-shader/x-fragment" id="BufferA">
       precision highp float;
       
       uniform float iTime;
       uniform float iScrollTop;
-      uniform vec2 iResolution;
       
       #define breakpoint 2.4
       #define breakpointTwo 4.5
@@ -24,11 +24,12 @@
         float s = 1.;
 
         float d = length(gv);
-        float a =  1.5*min(.25 * iScrollTop, 0.4);
-        float b = min(max(iScrollTop-breakpoint, 0.), 1.2);
-        float c = sqrt(min(max(iScrollTop-breakpointTwo, 0.), 4.));
+        float a = 1.5 * min(.25 * iScrollTop, 0.4);
+        float b = .8 * min(max(iScrollTop-breakpoint, 0.), 1.2);
+        float c = .6*sqrt(min(max(iScrollTop-breakpointTwo, 0.), 4.));
+        float st = .5*min(max(0., iScrollTop-breakpoint), 1.);
 
-        return (a + b - c) * max(s * .05 / d, 0.15);
+        return (a + b - c) * max(s * .05 / max(d,mix(0., 0.2, st)), 0.15);
       }
 
       vec4 shading(in float amp, in vec2 uv){
@@ -55,23 +56,36 @@
         float field2 = field(uv, 30., 1.);
         float field3 = field(uv, 30., 2.);
         float amp = field1 + field2 + field3;
-        col.r = shading(amp, uv).r;
-
-        vec2 dx = c*vec2(.05);
-        field1 = field(uv-dx, .25, .5);
-        field2 = field(uv-dx, 30., 1.);
-        field3 = field(uv-dx, 30., 2.);
-        amp = field1 + field2 + field3;
-        col.g = shading(amp, uv).g;
-
-        dx = c*vec2(.025);
-        field1 = field(uv-dx, .25, .5);
-        field2 = field(uv-dx, 30., 1.);
-        field3 = field(uv-dx, 30., 2.);
-        amp = field1 + field2 + field3;
-        col.b = shading(amp, uv).b;
+        col = shading(amp, uv);
 
         col.b += .5*(col.r + col.g);
+
+        gl_FragColor = 2. * col;
+      }
+    </script>
+    <script type="x-shader/x-fragment" id="BufferB">
+      precision highp float;
+      uniform sampler2D iChannel0;
+      uniform vec2 iResolution;
+      uniform float iScrollTop;
+
+      #define breakpoint 2.4
+      #define breakpointTwo 4.5
+      
+      void main(){
+        vec2 uv = vec2(gl_FragCoord) / iResolution;
+        vec2 gv = vec2(0);
+
+        vec4 col = vec4(0.);
+        float scale =  max(breakpointTwo-iScrollTop, 0.) * max(iScrollTop - breakpoint, 0.) * .0025 + 0.0001;
+        
+        col.b = texture2D(iChannel0, uv).b;
+
+        gv = uv - vec2(scale);
+        col.g = texture2D(iChannel0, gv).g;
+
+        gv = uv + 2. * vec2(scale);
+        col.r = texture2D(iChannel0, gv).r;
 
         gl_FragColor = col;
       }
@@ -79,25 +93,24 @@
     <script>
       shaderWebBackground.shade({
         shaders: {
-          image: {
+          BufferA: {
             uniforms: {
               iTime: (gl, loc) => gl.uniform1f(loc, performance.now() / 1000),
               iScrollTop: (gl, loc) =>
-                gl.uniform1f(loc, window.scrollY / window.innerHeight),
-              iResolution: (gl, loc) => {
-                const rect = document
-                  .getElementById("demo")
-                  .getBoundingClientRect();
-                return gl.uniform2f(
-                  loc,
-                  window.screen.width,
-                  window.screen.height
-                );
+                gl.uniform1f(loc, window.scrollY / window.innerHeight)
               },
             },
+          BufferB: {
+            uniforms: {
+              iScrollTop: (gl, loc) =>
+                gl.uniform1f(loc, window.scrollY / window.innerHeight),
+              iChannel0: (gl, loc, ctx) => ctx.texture(loc, ctx.buffers.BufferA),
+              iResolution: (gl, loc, ctx) => gl.uniform2f(loc, ctx.width, ctx.height)
+            },
+          }
+        }
           },
-        },
-      });
+      );
     </script>
     <style>
       .shader-web-background-fallback {
